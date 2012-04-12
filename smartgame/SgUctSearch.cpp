@@ -587,9 +587,24 @@ SgUctValue SgUctSearch::GetBound(bool useRave, bool useBiasTerm,
     if (useRave)
         value = GetValueEstimateRave(child);
     else
-        value = GetValueEstimate(false, child);
+    {
+        // OLD:
+        // value = GetValueEstimate(false, child);
+        
+        // NEW:
+        // Better first-play-urgency handling when rave is off:
+        // Exploit a child with mean > 0.5 if such a child exists;
+        // otherwise, select 'best' unexplored child. This will
+        // pick the the child with highest child.Prior() value.
+        if (! child.HasMean())
+            value = 0.5f;
+        else
+            value = GetValueEstimate(false, child);
+    }
+
     value += m_progressiveBiasConstant * child.Prior()
         / sqrt(child.MoveCount() + child.VirtualLossCount() + 1.0f);
+
     if (m_biasTermConstant == 0.0 || ! useBiasTerm)
         return value;
     else
