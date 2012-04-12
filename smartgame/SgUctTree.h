@@ -53,12 +53,15 @@ struct SgUctMoveInfo
         2. store final value combined across all predictors. */
     float m_predictorValue;
  
+    /** Probability decided by pattern gammas. */
+    float m_prior;
+
     SgUctMoveInfo();
 
     SgUctMoveInfo(SgMove move);
 
     SgUctMoveInfo(SgMove move, SgUctValue value, SgUctValue count,
-               SgUctValue raveValue, SgUctValue raveCount);
+                  SgUctValue raveValue, SgUctValue raveCount);
 };
 
 inline SgUctMoveInfo::SgUctMoveInfo()
@@ -66,7 +69,8 @@ inline SgUctMoveInfo::SgUctMoveInfo()
       m_count(0),
       m_raveValue(0),
       m_raveCount(0),
-      m_predictorValue(0.0)
+      m_predictorValue(0.0),
+      m_prior(0.0)
 { }
 
 inline SgUctMoveInfo::SgUctMoveInfo(SgMove move)
@@ -75,7 +79,8 @@ inline SgUctMoveInfo::SgUctMoveInfo(SgMove move)
       m_count(0),
       m_raveValue(0),
       m_raveCount(0),
-      m_predictorValue(0.0)
+      m_predictorValue(0.0),
+      m_prior(0.0)
 { }
 
 inline SgUctMoveInfo::SgUctMoveInfo(SgMove move, SgUctValue value, SgUctValue count,
@@ -85,7 +90,8 @@ inline SgUctMoveInfo::SgUctMoveInfo(SgMove move, SgUctValue value, SgUctValue co
       m_count(count),
       m_raveValue(raveValue),
       m_raveCount(raveCount),
-      m_predictorValue(0.0)
+      m_predictorValue(0.0),
+      m_prior(0.0)
 { }
 
 //----------------------------------------------------------------------------
@@ -226,8 +232,10 @@ public:
 
     /** Initialize RAVE value with prior knowledge. */
     void InitializeRaveValue(SgUctValue value,  SgUctValue count);
+    
+    float PredictorValue() const;
 
-	float PredictorValue() const;
+    SgUctValue Prior() const;
 
     int VirtualLossCount() const;
 
@@ -276,6 +284,8 @@ private:
     volatile SgUctProvenType m_provenType;
 
     volatile int m_virtualLossCount;
+
+    volatile SgUctValue m_prior;
 };
 
 inline SgUctNode::SgUctNode(const SgUctMoveInfo& info)
@@ -287,7 +297,8 @@ inline SgUctNode::SgUctNode(const SgUctMoveInfo& info)
       m_posCount(0),
       m_knowledgeCount(0),
       m_provenType(SG_NOT_PROVEN),
-      m_virtualLossCount(0)
+      m_virtualLossCount(0),
+      m_prior(info.m_prior)
 {
     // m_firstChild is not initialized, only defined if m_nuChildren > 0
 }
@@ -308,6 +319,7 @@ inline void SgUctNode::MergeResults(const SgUctNode& node)
         m_statistics.Add(node.m_statistics.Mean(), node.m_statistics.Count());
     if (node.m_raveValue.IsDefined())
         m_raveValue.Add(node.m_raveValue.Mean(), node.m_raveValue.Count());
+    m_prior = node.Prior();
 }
 
 inline void SgUctNode::RemoveGameResult(SgUctValue eval)
@@ -468,6 +480,11 @@ inline SgUctValue SgUctNode::PosCount() const
 inline float SgUctNode::PredictorValue() const
 {
     return m_predictorValue;
+}
+
+inline SgUctValue SgUctNode::Prior() const
+{
+    return m_prior;
 }
 
 inline SgUctValue SgUctNode::RaveCount() const

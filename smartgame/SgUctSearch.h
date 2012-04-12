@@ -666,6 +666,12 @@ public:
 
     void SetBiasTermDepth(int depth);
 
+    /** Constant factor to scale progressive bias term. */
+    SgUctValue ProgressiveBiasConstant() const;
+
+    /** See ProgressiveBiasConstant() */
+    void SetProgressiveBiasConstant(SgUctValue value);
+
     /** Points at which to recompute children.  
         Specifies the number of visits at which GenerateAllMoves() is
         called again at the node. This is to allow multiple knowledge
@@ -1053,6 +1059,9 @@ private:
     /** m_raveWeightInitial / m_raveWeightFinal precomputed for efficiency */
     SgUctValue m_raveWeightParam2;
 
+    /** See ProgressiveBiasConstant() */
+    SgUctValue m_progressiveBiasConstant;
+
     /** Time limit for current search. */
     double m_maxTime;
 
@@ -1160,6 +1169,16 @@ private:
 inline float SgUctSearch::BiasTermConstant() const
 {
     return m_biasTermConstant;
+}
+
+inline SgUctValue SgUctSearch::ProgressiveBiasConstant() const
+{
+    return m_progressiveBiasConstant;
+}
+
+inline void SgUctSearch::SetProgressiveBiasConstant(SgUctValue value)
+{
+    m_progressiveBiasConstant = value;
 }
 
 inline bool SgUctSearch::CheckFloatPrecision() const

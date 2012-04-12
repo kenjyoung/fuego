@@ -273,6 +273,7 @@ SgUctSearch::SgUctSearch(SgUctThreadStateFactory* threadStateFactory,
       m_firstPlayUrgency(10000),
       m_raveWeightInitial(0.9f),
       m_raveWeightFinal(20000),
+      m_progressiveBiasConstant(0.0f),
       m_virtualLoss(false),
       m_logFileName("uctsearch.log"),
       m_fastLog(10),
@@ -578,14 +579,16 @@ SgUctValue SgUctSearch::GetBound(bool useRave, const SgUctNode& node,
 }
 
 SgUctValue SgUctSearch::GetBound(bool useRave, bool useBiasTerm,
-                            SgUctValue logPosCount, 
-                            const SgUctNode& child) const
+                                 SgUctValue logPosCount, 
+                                 const SgUctNode& child) const
 {
     SgUctValue value;
     if (useRave)
         value = GetValueEstimateRave(child);
     else
         value = GetValueEstimate(false, child);
+    value += m_progressiveBiasConstant * child.Prior()
+        / sqrt(child.MoveCount() + child.VirtualLossCount() + 1.0f);
     if (m_biasTermConstant == 0.0 || ! useBiasTerm)
         return value;
     else
@@ -1273,8 +1276,15 @@ const SgUctNode& SgUctSearch::SelectChild(int& randomizeCounter,
     }
 
     if (posCount == 0)
-        // If position count is zero, return first child
-        return *SgUctChildIterator(m_tree, node);
+    {
+        if (m_progressiveBiasConstant == 0.0f)
+            // If position count is zero, return first child
+            return *SgUctChildIterator(m_tree, node);
+        // Nodes potentially have a progressive bias term (even though
+        // in this case children have no real visits). Continue on,
+        // and pick a child base on the progressive bias terms.
+        posCount = 1;
+    }
     SgUctValue logPosCount = Log(posCount);
     const SgUctNode* bestChild = 0;
     SgUctValue bestUpperBound = 0;
