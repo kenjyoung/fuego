@@ -775,6 +775,11 @@ public:
     void CreateChildren(std::size_t allocatorId, const SgUctNode& node,
                         const std::vector<SgUctMoveInfo>& moves);
 
+    /** Sets any move that is not in moves as a proven loss. */
+    void SetMustplay(const SgUctNode& node,
+                     const std::vector<SgUctMoveInfo>& moves,
+                     bool deleteChildTrees);
+
     /** Merge new children with old.
         Requires: Allocator(allocatorId).HasCapacity(moves.size()) */
     void MergeChildren(std::size_t allocatorId, const SgUctNode& node,

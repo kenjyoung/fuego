@@ -323,6 +323,38 @@ void SgUctTree::ExtractSubtree(SgUctTree& target, const SgUctNode& node,
     SgSynchronizeThreadMemory();
 }
 
+void SgUctTree::SetMustplay(const SgUctNode& node,
+                            const std::vector<SgUctMoveInfo>& moves,
+                            bool deleteChildTrees)
+{
+    for (SgUctChildIterator it(*this, node); it; ++it)
+    {
+        SgUctNode* child = const_cast<SgUctNode*>(&(*it));
+        bool found = false;
+        for (size_t j = 0; j < moves.size(); ++j) 
+        {
+            if (child->Move() == moves[j].m_move)
+            {
+                found = true;
+                if (moves[j].m_count > 0)
+                    child->AddGameResults(moves[j].m_value, moves[j].m_count);
+                if (moves[j].m_raveCount > 0)
+                    child->AddRaveValue(moves[j].m_raveValue, 
+                                        moves[j].m_raveCount);
+                if (deleteChildTrees) 
+                {
+                    // Write order dependency
+                    child->SetNuChildren(0);
+                    child->SetFirstChild(0);
+                }
+                break;
+            }
+        }
+        if (!found)
+            child->SetProvenType(SG_PROVEN_WIN); // mark as loss
+    }    
+}
+
 void SgUctTree::MergeChildren(std::size_t allocatorId, const SgUctNode& node,
                               const std::vector<SgUctMoveInfo>& moves,
                               bool deleteChildTrees)

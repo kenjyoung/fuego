@@ -374,6 +374,13 @@ public:
     /** @name Virtual functions */
     // @{
 
+    /** Used by LazyDelete(). */
+    virtual bool IsValidMove(SgMove move) 
+    {
+        SG_UNUSED(move);
+        return true;
+    }
+
     /** Function that will be called by PlayGame() before the game.
         Default implementation does nothing. */
     virtual void GameStart();
@@ -829,6 +836,17 @@ public:
     /** See VirtualLoss() */
     void SetVirtualLoss(bool enable);
 
+    /** Lazy pruning of subtrees during tree phase of search.  
+        Useful in games that can prove (through a knowledge
+        computation, say) that a move should not be considered under
+        this node for the rest of the game. This way is probably much
+        cheaper than pruning the entire subtree at once, since we may
+        only visit a small subset of the tree in the future. */
+    bool LazyDelete() const;
+    
+    /** See LazyDelete() */
+    void SetLazyDelete(bool enable);
+
     /** Prune nodes with low counts if tree is full.
         This will prune nodes below a minimum count, if the tree gets full
         during a search. The minimum count is PruneMinCount() at the beginning
@@ -1068,6 +1086,9 @@ private:
     /** See VirtualLoss() */
     bool m_virtualLoss;
 
+    /** See LazyDelete() */
+    bool m_lazyDelete;
+
     std::string m_logFileName;
 
     SgTimer m_timer;
@@ -1118,6 +1139,9 @@ private:
     void DeleteThreads();
 
     void ExpandNode(SgUctThreadState& state, const SgUctNode& node);
+
+    bool AddingNewChildren(const SgUctNode& node,
+                           const std::vector<SgUctMoveInfo>& moves) const;
 
     void CreateChildren(SgUctThreadState& state, const SgUctNode& node,
                         bool deleteChildTrees);
@@ -1446,6 +1470,16 @@ inline bool SgUctSearch::VirtualLoss() const
 inline void SgUctSearch::SetVirtualLoss(bool enable)
 {
     m_virtualLoss = enable;
+}
+
+inline bool SgUctSearch::LazyDelete() const
+{
+    return m_lazyDelete;
+}
+
+inline void SgUctSearch::SetLazyDelete(bool enable)
+{
+    m_lazyDelete = enable;
 }
 
 inline const SgUctSearchStat& SgUctSearch::Statistics() const

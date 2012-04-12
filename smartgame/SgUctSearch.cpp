@@ -275,6 +275,7 @@ SgUctSearch::SgUctSearch(SgUctThreadStateFactory* threadStateFactory,
       m_raveWeightFinal(20000),
       m_progressiveBiasConstant(0.0f),
       m_virtualLoss(false),
+      m_lazyDelete(false),
       m_logFileName("uctsearch.log"),
       m_fastLog(10),
       m_mpiSynchronizer(SgMpiNullSynchronizer::Create())
@@ -747,12 +748,41 @@ SgUctValue SgUctSearch::Log(SgUctValue x) const
 #endif
 }
 
+bool SgUctSearch::AddingNewChildren(const SgUctNode& node,
+                                    const std::vector<SgUctMoveInfo>& moves)
+                                    const
+{
+    for (std::size_t i = 0; i < moves.size(); ++i) 
+    {
+        bool found = false;
+        for (SgUctChildIterator it(m_tree, node); it; ++it)
+        {
+            const SgUctNode& child = *it;
+            if (child.Move() == moves[i].m_move) 
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            return true;
+    }
+    return false;
+}                                    
+
 /** Creates the children with the given moves and merges with existing
     children in the tree. */
 void SgUctSearch::CreateChildren(SgUctThreadState& state, 
                                  const SgUctNode& node,
                                  bool deleteChildTrees)
 {
+    // If not adding any new children then no need to allocate a new set
+    // of children, just mark pruned children as proven losses. 
+    if (! AddingNewChildren(node, state.m_moves))
+    {
+        m_tree.SetMustplay(node, state.m_moves, deleteChildTrees);
+        return;
+    } 
     unsigned int threadId = state.m_threadId;
     if (! m_tree.HasCapacity(threadId, state.m_moves.size()))
     {
@@ -1044,7 +1074,36 @@ bool SgUctSearch::PlayInTree(SgUctThreadState& state, bool& isTerminal)
                 return true;
             breakAfterSelect = true;
         }
-        current = &SelectChild(state.m_randomizeRaveCounter, useBiasTerm, *current);
+        // Select next tree move.
+        if (m_lazyDelete)
+        {
+            // Lazy delete is on: select a child and ask derived class
+            // if it's still valid, if it isn't then mark it as a loss
+            // and select another. 
+            // See LazyDelete() for more info.
+            const SgUctNode* old_current = current;
+            while (true)
+            {
+                current = &SelectChild(state.m_randomizeRaveCounter, 
+                                       useBiasTerm, *old_current);
+                if (state.IsValidMove(current->Move()))
+                    break;
+                if (current->IsProvenWin())
+                {
+                    // Returned move is a loss, all children must be
+                    // losing so set current state as a loss.
+                    m_tree.SetProvenType(*old_current, SG_PROVEN_LOSS);
+                    PropagateProvenStatus(nodes);
+                    return true;
+                }
+                // Ignore this move from now on
+                m_tree.SetProvenType(*current, SG_PROVEN_WIN);
+            }
+        } 
+        else
+            current = &SelectChild(state.m_randomizeRaveCounter, 
+                                   useBiasTerm, *current);
+
         if (m_virtualLoss && m_numberThreads > 1)
             m_tree.AddVirtualLoss(*current);
         nodes.push_back(current);
