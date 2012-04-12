@@ -672,6 +672,10 @@ public:
     int BiasTermDepth() const;
 
     void SetBiasTermDepth(int depth);
+    
+    float UctBiasConstant() const;
+    
+    void SetUctBiasConstant(float value);
 
     /** Constant factor to scale progressive bias term. */
     SgUctValue ProgressiveBiasConstant() const;
@@ -1062,6 +1066,8 @@ private:
 
     std::size_t m_biasTermDepth;
 
+    float m_uctBiasConstant;
+
     /** See FirstPlayUrgency() */
     SgUctValue m_firstPlayUrgency;
 
@@ -1152,7 +1158,8 @@ private:
 
     SgUctValue GetValueEstimate(bool useRave, const SgUctNode& child) const;
 
-    SgUctValue GetValueEstimateRave(const SgUctNode& child) const;
+    SgUctValue GetValueEstimateRave(const SgUctNode& child,
+                                    SgUctValue logPosCount) const;
 
     SgUctValue Log(SgUctValue x) const;
 
@@ -1233,6 +1240,16 @@ inline int SgUctSearch::BiasTermDepth() const
 inline void SgUctSearch::SetBiasTermDepth(int depth) 
 {
     m_biasTermDepth = depth;
+}
+
+inline float SgUctSearch::UctBiasConstant() const
+{
+    return m_uctBiasConstant;
+}
+
+inline void SgUctSearch::SetUctBiasConstant(float value)
+{
+    m_uctBiasConstant = value;
 }
 
 inline SgUctValue SgUctSearch::FirstPlayUrgency() const

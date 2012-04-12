@@ -270,6 +270,7 @@ SgUctSearch::SgUctSearch(SgUctThreadStateFactory* threadStateFactory,
       m_biasTermConstant(0.7f),
       m_biasTermFrequency(1),
       m_biasTermDepth(0),
+      m_uctBiasConstant(0.6f),
       m_firstPlayUrgency(10000),
       m_raveWeightInitial(0.9f),
       m_raveWeightFinal(20000),
@@ -585,7 +586,7 @@ SgUctValue SgUctSearch::GetBound(bool useRave, bool useBiasTerm,
 {
     SgUctValue value;
     if (useRave)
-        value = GetValueEstimateRave(child);
+        value = GetValueEstimateRave(child, logPosCount);
     else
     {
         // OLD:
@@ -694,7 +695,8 @@ SgUctValue SgUctSearch::GetValueEstimate(bool useRave, const SgUctNode& child) c
     Previously there were more estimators than move value and RAVE value,
     and in the future there may be again. GetValueEstimate() is easier to
     extend, this function is more optimized for the special case. */
-SgUctValue SgUctSearch::GetValueEstimateRave(const SgUctNode& child) const
+SgUctValue SgUctSearch::GetValueEstimateRave(const SgUctNode& child,
+                                             SgUctValue logPosCount) const
 {
     SG_ASSERT(m_rave);
     SgUctValue value;
@@ -718,7 +720,8 @@ SgUctValue SgUctSearch::GetValueEstimateRave(const SgUctNode& child) const
     
     if (uctStats.IsDefined())
     {
-        SgUctValue moveValue = InverseEstimate((SgUctValue)uctStats.Mean());
+        SgUctValue moveValue = InverseEstimate((SgUctValue)uctStats.Mean())
+            + m_uctBiasConstant * sqrt(logPosCount / uctStats.Count());
         if (hasRave)
         {
             SgUctValue moveCount = uctStats.Count();
