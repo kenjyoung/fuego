@@ -1038,7 +1038,9 @@ bool SgUctSearch::PlayInTree(SgUctThreadState& state, bool& isTerminal)
         {
             state.m_moves.clear();
             SgUctProvenType provenType = SG_NOT_PROVEN;
-            state.GenerateAllMoves(0, state.m_moves, provenType);
+            bool expandNode = current->MoveCount() >= m_expandThreshold;
+            state.GenerateAllMoves((expandNode ? 0 : -1), state.m_moves, 
+                                   provenType);
             if (current == root)
                 ApplyRootFilter(state.m_moves);
             if (provenType != SG_NOT_PROVEN)
@@ -1052,7 +1054,7 @@ bool SgUctSearch::PlayInTree(SgUctThreadState& state, bool& isTerminal)
                 isTerminal = true;
                 break;
             }
-            if (current->MoveCount() >= m_expandThreshold)
+            if (expandNode)
             {
                 ExpandNode(state, *current);
                 if (state.m_isTreeOutOfMem)
