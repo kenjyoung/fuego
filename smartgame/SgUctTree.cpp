@@ -345,6 +345,7 @@ void SgUctTree::SetMustplay(const SgUctNode& node,
                 {
                     // Write order dependency
                     child->SetNuChildren(0);
+                    SgSynchronizeThreadMemory();                    
                     child->SetFirstChild(0);
                 }
                 break;
@@ -352,7 +353,8 @@ void SgUctTree::SetMustplay(const SgUctNode& node,
         }
         if (!found)
             child->SetProvenType(SG_PROVEN_WIN); // mark as loss
-    }    
+    }
+    SgSynchronizeThreadMemory();
 }
 
 void SgUctTree::MergeChildren(std::size_t allocatorId, const SgUctNode& node,
