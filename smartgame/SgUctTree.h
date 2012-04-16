@@ -357,6 +357,7 @@ inline void SgUctNode::CopyDataFrom(const SgUctNode& node)
     m_knowledgeCount = node.m_knowledgeCount;
     m_provenType = node.m_provenType;
     m_virtualLossCount = node.m_virtualLossCount;
+    m_prior = node.m_prior;
 }
 
 inline const SgUctNode* SgUctNode::FirstChild() const
