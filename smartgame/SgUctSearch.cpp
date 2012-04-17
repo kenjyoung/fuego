@@ -1102,22 +1102,42 @@ bool SgUctSearch::PlayInTree(SgUctThreadState& state, bool& isTerminal)
             // and select another. 
             // See LazyDelete() for more info.
             const SgUctNode* old_current = current;
+            int fail_count = 0;
             while (true)
             {
                 current = &SelectChild(state.m_randomizeRaveCounter, 
                                        useBiasTerm, *old_current);
                 if (state.IsValidMove(current->Move()))
                     break;
-                if (current->IsProvenWin())
+
+                 // Other threads might set it to PROVEN_WIN, so check
+                 // it for at least 121 times.
+                if (current->IsProvenWin() &&
+                    fail_count >= 121)
                 {
-                    // Returned move is a loss, all children must be
-                    // losing so set current state as a loss.
-                    m_tree.SetProvenType(*old_current, SG_PROVEN_LOSS);
-                    PropagateProvenStatus(nodes);
+                    if (old_current->IsProven())
+                        return true;
+
+                    state.m_moves.clear();
+                    SgUctProvenType provenType = SG_NOT_PROVEN;
+                    state.GenerateAllMoves(-1, state.m_moves, provenType);
+
+                    if (old_current == root)
+                        ApplyRootFilter(state.m_moves);
+
+                    if (provenType != SG_NOT_PROVEN)
+                    {
+                        m_tree.SetProvenType(*old_current, provenType);
+                        PropagateProvenStatus(nodes);
+                        return true;
+                    }
+                    if (state.m_moves.empty())
+                        isTerminal = true;
                     return true;
                 }
-                // Ignore this move from now on
+
                 m_tree.SetProvenType(*current, SG_PROVEN_WIN);
+                fail_count++;
             }
         } 
         else
