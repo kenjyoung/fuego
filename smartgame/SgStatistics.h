@@ -708,7 +708,7 @@ void SgHistogram<VALUE,COUNT>::Init(VALUE min, VALUE max, int bins)
     m_min = min;
     m_max = max;
     m_bins = bins;
-    m_binSize = (m_max - m_min) / m_bins;
+    m_binSize = (m_max - m_min) / (VALUE)m_bins;
     Clear();
 }
 
@@ -716,8 +716,7 @@ template<typename VALUE, typename COUNT>
 void SgHistogram<VALUE,COUNT>::Write(std::ostream& out) const
 {
     for (int i = 0; i < m_bins; ++i)
-        out << (m_min + i * m_binSize) << '\t' << m_array[i] << '\n';
-
+        out << (m_min + (VALUE)i * m_binSize) << '\t' << m_array[i] << '\n';
 }
 
 template<typename VALUE, typename COUNT>
