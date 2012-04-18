@@ -669,7 +669,7 @@ public:
 
     void SetBiasTermFrequency(int frequency);
 
-    int BiasTermDepth() const;
+    size_t BiasTermDepth() const;
 
     void SetBiasTermDepth(int depth);
     
@@ -1232,7 +1232,7 @@ inline void SgUctSearch::SetBiasTermFrequency(int frequency)
     m_biasTermFrequency = frequency;
 }
 
-inline int SgUctSearch::BiasTermDepth() const
+inline size_t SgUctSearch::BiasTermDepth() const
 {
     return m_biasTermDepth;
 }
