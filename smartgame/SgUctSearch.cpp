@@ -275,6 +275,7 @@ SgUctSearch::SgUctSearch(SgUctThreadStateFactory* threadStateFactory,
       m_raveWeightInitial(0.9f),
       m_raveWeightFinal(20000),
       m_progressiveBiasConstant(0.0f),
+      m_extendUnstableSearch(true),
       m_virtualLoss(false),
       m_lazyDelete(false),
       m_logFileName("uctsearch.log"),
@@ -306,6 +307,27 @@ void SgUctSearch::ApplyRootFilter(vector<SgUctMoveInfo>& moves)
 SgUctValue SgUctSearch::GamesPlayed() const
 {
     return m_tree.Root().MoveCount() - m_startRootMoveCount;
+}
+
+bool SgUctSearch::ExtendUnstableSearch(SgUctThreadState& state)
+{
+    if (m_extendUnstableSearch && ! m_extendedSearch)
+    {
+        const SgUctNode* countChild 
+            = FindBestChild(m_tree.Root(), SG_UCTMOVESELECT_COUNT);
+        const SgUctNode* valueChild
+            = FindBestChild(m_tree.Root(), SG_UCTMOVESELECT_VALUE);
+        SgDebug() << "countChild=" << MoveString(countChild->Move()) << '\n'
+                  << "valueChild=" << MoveString(valueChild->Move()) << '\n';
+        if (countChild != valueChild)
+        {
+            Debug(state, "SgUctSearch: extending unstable search!");
+            m_extendedSearch = true;
+            m_maxTime *= 1.5f;
+            return true;
+        }
+    }
+    return false;
 }
 
 bool SgUctSearch::CheckAbortSearch(SgUctThreadState& state)
@@ -351,6 +373,8 @@ bool SgUctSearch::CheckAbortSearch(SgUctThreadState& state)
 
         if (time > m_maxTime)
         {
+            if (ExtendUnstableSearch(state))
+                return false;            
             Debug(state, "SgUctSearch: max time reached");
             return true;
         }
@@ -383,6 +407,8 @@ bool SgUctSearch::CheckAbortSearch(SgUctThreadState& state)
                 remainingGames = SgUctValue(remainingGamesDouble);
             if (CheckCountAbort(state, remainingGames))
             {
+                if (ExtendUnstableSearch(state))
+                    return false;
                 Debug(state, "SgUctSearch: move cannot change anymore");
                 return true;
             }
@@ -399,14 +425,15 @@ bool SgUctSearch::CheckCountAbort(SgUctThreadState& state,
                                   SgUctValue remainingGames) const
 {
     const SgUctNode& root = m_tree.Root();
-    const SgUctNode* bestChild = FindBestChild(root);
+    const SgUctNode* bestChild = FindBestChild(root, SG_UCTMOVESELECT_COUNT);
     if (bestChild == 0)
         return false;
     SgUctValue bestCount = bestChild->MoveCount();
     vector<SgMove>& excludeMoves = state.m_excludeMoves;
     excludeMoves.clear();
     excludeMoves.push_back(bestChild->Move());
-    const SgUctNode* secondBestChild = FindBestChild(root, &excludeMoves);
+    const SgUctNode* secondBestChild 
+        = FindBestChild(root, SG_UCTMOVESELECT_COUNT, &excludeMoves);
     if (secondBestChild == 0)
         return false;
     SgUctValue secondBestCount = secondBestChild->MoveCount();
@@ -483,6 +510,7 @@ void SgUctSearch::ExpandNode(SgUctThreadState& state, const SgUctNode& node)
 
 const SgUctNode*
 SgUctSearch::FindBestChild(const SgUctNode& node,
+                           SgUctMoveSelect moveSelect,
                            const vector<SgMove>* excludeMoves) const
 {
     if (! node.HasChildren())
@@ -500,8 +528,8 @@ SgUctSearch::FindBestChild(const SgUctNode& node,
                 continue;
         }
         if (  ! child.HasMean()
-           && ! (  (  m_moveSelect == SG_UCTMOVESELECT_BOUND
-                   || m_moveSelect == SG_UCTMOVESELECT_ESTIMATE
+           && ! (  (  moveSelect == SG_UCTMOVESELECT_BOUND
+                   || moveSelect == SG_UCTMOVESELECT_ESTIMATE
                    )
                 && m_rave
                 && child.HasRaveValue()
@@ -514,7 +542,7 @@ SgUctSearch::FindBestChild(const SgUctNode& node,
             break;
         }
         SgUctValue value;
-        switch (m_moveSelect)
+        switch (moveSelect)
         {
         case SG_UCTMOVESELECT_VALUE:
             value = InverseEstimate((SgUctValue)child.Mean());
@@ -547,7 +575,7 @@ void SgUctSearch::FindBestSequence(vector<SgMove>& sequence) const
     const SgUctNode* current = &m_tree.Root();
     while (true)
     {
-        current = FindBestChild(*current);
+        current = FindBestChild(*current, m_moveSelect);
         if (current == 0)
             break;
         sequence.push_back(current->Move());
@@ -862,7 +890,7 @@ void SgUctSearch::PrintSearchProgress(double currTime) const
             % SgTime::Format(currTime, true) % rootMean % rootMoveCount % m_statistics.m_movesInTree.Mean());
     for (int i = 0; i <= MAX_SEQ_PRINT_LENGTH && current->HasChildren(); ++i)
     {
-        current = FindBestChild(*current);
+        current = FindBestChild(*current, m_moveSelect);
         if (current == 0 || current->MoveCount() < MIN_MOVE_COUNT)
             break;
         if (i == 0)
@@ -1477,6 +1505,7 @@ void SgUctSearch::StartSearch(const vector<SgMove>& rootFilter,
     m_statistics.Clear();
     m_aborted = false;
     m_wasEarlyAbort = false;
+    m_extendedSearch = false;
     if (! SgDeterministic::DeterministicMode())
        m_checkTimeInterval = 1;
     m_numberGames = 0;

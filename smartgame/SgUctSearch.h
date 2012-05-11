@@ -602,11 +602,12 @@ public:
 
     /** Find child node with best move.
         @param node The father node.
+        @param moveSelect Type of move selection to use.
         @param excludeMoves Optional list of moves to ignore in the children
         nodes.
         @return The best child or 0 if no child nodes exists. */
     const SgUctNode*
-    FindBestChild(const SgUctNode& node,
+    FindBestChild(const SgUctNode& node, SgUctMoveSelect moveSelect,
                   const std::vector<SgMove>* excludeMoves = 0) const;
 
     /** Extract sequence of best moves from root node.
@@ -682,6 +683,18 @@ public:
 
     /** See ProgressiveBiasConstant() */
     void SetProgressiveBiasConstant(SgUctValue value);
+
+    /** Extends search in unstable positions.
+        An unstable position is one in which the move with the highest
+        count is not the same as the move with the best value, as
+        returned by FindBestChild(). The search is extended in such a
+        case by m_maxTime / 2.0. This extension is performed at most
+        once per search. */
+    bool ExtendUnstableSearch() const;
+
+    /** See ExtendUnstableSearch() */
+    void SetExtendUnstableSearch(bool enable);
+
 
     /** Points at which to recompute children.  
         Specifies the number of visits at which GenerateAllMoves() is
@@ -1086,6 +1099,10 @@ private:
     /** See ProgressiveBiasConstant() */
     SgUctValue m_progressiveBiasConstant;
 
+    bool m_extendUnstableSearch;
+
+    bool m_extendedSearch;
+
     /** Time limit for current search. */
     double m_maxTime;
 
@@ -1145,6 +1162,8 @@ private:
     void DeleteThreads();
 
     void ExpandNode(SgUctThreadState& state, const SgUctNode& node);
+
+    bool ExtendUnstableSearch(SgUctThreadState& state);
 
     bool AddingNewChildren(const SgUctNode& node,
                            const std::vector<SgUctMoveInfo>& moves) const;
@@ -1210,6 +1229,16 @@ inline SgUctValue SgUctSearch::ProgressiveBiasConstant() const
 inline void SgUctSearch::SetProgressiveBiasConstant(SgUctValue value)
 {
     m_progressiveBiasConstant = value;
+}
+
+inline bool SgUctSearch::ExtendUnstableSearch() const
+{
+    return m_extendUnstableSearch;
+}
+
+inline void SgUctSearch::SetExtendUnstableSearch(bool enable)
+{
+    m_extendUnstableSearch = enable;
 }
 
 inline bool SgUctSearch::CheckFloatPrecision() const

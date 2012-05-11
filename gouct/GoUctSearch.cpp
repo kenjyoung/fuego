@@ -308,7 +308,8 @@ SgPoint GoUctSearchUtil::TrompTaylorPassCheck(SgPoint move,
               << value << " trompTaylorScore=" << trompTaylorScore << '\n';
     vector<SgMove> excludeMoves;
     excludeMoves.push_back(SG_PASS);
-    const SgUctNode* bestChild = search.FindBestChild(root, &excludeMoves);
+    const SgUctNode* bestChild 
+        = search.FindBestChild(root, search.MoveSelect(), &excludeMoves);
     if (bestChild == 0)
     {
         SgDebug() <<

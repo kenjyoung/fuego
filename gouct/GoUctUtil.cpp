@@ -121,7 +121,8 @@ void GoUctUtil::GfxBestMove(const SgUctSearch& search, SgBlackWhite toPlay,
     const SgUctTree& tree = search.Tree();
     const SgUctNode& root = tree.Root();
     out << "VAR";
-    const SgUctNode* bestValueChild = search.FindBestChild(root);
+    const SgUctNode* bestValueChild 
+        = search.FindBestChild(root, search.MoveSelect());
     if (bestValueChild != 0)
     {
         SgPoint move = bestValueChild->Move();
