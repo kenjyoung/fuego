@@ -275,6 +275,7 @@ SgUctSearch::SgUctSearch(SgUctThreadStateFactory* threadStateFactory,
       m_raveWeightInitial(0.9f),
       m_raveWeightFinal(20000),
       m_progressiveBiasConstant(0.0f),
+      m_vcProgressiveBiasConstant(0.0f),
       m_extendUnstableSearch(true),
       m_virtualLoss(false),
       m_lazyDelete(false),
@@ -631,8 +632,11 @@ SgUctValue SgUctSearch::GetBound(bool useRave, bool useBiasTerm,
             value = GetValueEstimate(false, child);
     }
 
-    value += m_progressiveBiasConstant * child.Prior()
-        / sqrt(child.MoveCount() + child.VirtualLossCount() + 1.0f);
+    const SgUctValue sqrtMoveCount =
+        sqrt(child.MoveCount() + child.VirtualLossCount() + 1.0f);
+
+    value += m_progressiveBiasConstant * child.Prior() / sqrtMoveCount;
+    value += m_vcProgressiveBiasConstant * child.VCPrior() / sqrtMoveCount;
 
     if (m_biasTermConstant == 0.0 || ! useBiasTerm)
         return value;

@@ -46,15 +46,13 @@ struct SgUctMoveInfo
 
     /** Rave count of move after node is created. */
     SgUctValue m_raveCount;
-
-    /** Value of either single or combined predictor.
-        Use:
-        1. hold return value from one predictor's ProcessPosition.
-        2. store final value combined across all predictors. */
-    float m_predictorValue;
  
     /** Probability decided by pattern gammas. */
     float m_prior;
+
+    float m_vcGamma;
+
+    SgUctValue m_vcPrior;
 
     SgUctMoveInfo();
 
@@ -69,8 +67,9 @@ inline SgUctMoveInfo::SgUctMoveInfo()
       m_count(0),
       m_raveValue(0),
       m_raveCount(0),
-      m_predictorValue(0.0),
-      m_prior(0.0)
+      m_prior(0.0),
+      m_vcGamma(0.0),
+      m_vcPrior(0.0)
 { }
 
 inline SgUctMoveInfo::SgUctMoveInfo(SgMove move)
@@ -79,8 +78,9 @@ inline SgUctMoveInfo::SgUctMoveInfo(SgMove move)
       m_count(0),
       m_raveValue(0),
       m_raveCount(0),
-      m_predictorValue(0.0),
-      m_prior(0.0)
+      m_prior(0.0),
+      m_vcGamma(0.0),
+      m_vcPrior(0.0)
 { }
 
 inline SgUctMoveInfo::SgUctMoveInfo(SgMove move, SgUctValue value, SgUctValue count,
@@ -90,8 +90,9 @@ inline SgUctMoveInfo::SgUctMoveInfo(SgMove move, SgUctValue value, SgUctValue co
       m_count(count),
       m_raveValue(raveValue),
       m_raveCount(raveCount),
-      m_predictorValue(0.0),
-      m_prior(0.0)
+      m_prior(0.0),
+      m_vcGamma(0.0),
+      m_vcPrior(0.0)
 { }
 
 //----------------------------------------------------------------------------
@@ -233,9 +234,15 @@ public:
     /** Initialize RAVE value with prior knowledge. */
     void InitializeRaveValue(SgUctValue value,  SgUctValue count);
     
-    float PredictorValue() const;
-
     SgUctValue Prior() const;
+
+    float VCGamma() const;
+
+    void SetVCGamma(float gamma);
+
+    SgUctValue VCPrior() const;
+
+    void SetVCPrior(SgUctValue prior);
 
     int VirtualLossCount() const;
 
@@ -269,9 +276,6 @@ private:
 
     volatile SgMove m_move;
 
-    /* Value of additive predictor */
-    volatile float m_predictorValue;
-
     /** RAVE statistics.
         Uses double for count to allow adding fractional values if RAVE
         updates are weighted. */
@@ -286,19 +290,24 @@ private:
     volatile int m_virtualLossCount;
 
     volatile SgUctValue m_prior;
+
+    volatile float m_vcGamma;
+
+    volatile SgUctValue m_vcPrior;
 };
 
 inline SgUctNode::SgUctNode(const SgUctMoveInfo& info)
     : m_statistics(info.m_value, info.m_count),
       m_nuChildren(0),
       m_move(info.m_move),
-      m_predictorValue(info.m_predictorValue),
       m_raveValue(info.m_raveValue, info.m_raveCount),
       m_posCount(0),
       m_knowledgeCount(0),
       m_provenType(SG_NOT_PROVEN),
       m_virtualLossCount(0),
-      m_prior(info.m_prior)
+      m_prior(info.m_prior),
+      m_vcGamma(info.m_vcGamma),
+      m_vcPrior(info.m_vcPrior)
 {
     // m_firstChild is not initialized, only defined if m_nuChildren > 0
 }
@@ -320,6 +329,8 @@ inline void SgUctNode::MergeResults(const SgUctNode& node)
     if (node.m_raveValue.IsDefined())
         m_raveValue.Add(node.m_raveValue.Mean(), node.m_raveValue.Count());
     m_prior = node.Prior();
+    m_vcGamma = node.VCGamma();
+    m_vcPrior = node.VCPrior();    
 }
 
 inline void SgUctNode::RemoveGameResult(SgUctValue eval)
@@ -351,13 +362,14 @@ inline void SgUctNode::CopyDataFrom(const SgUctNode& node)
 {
     m_statistics = node.m_statistics;
     m_move = node.m_move;
-    m_predictorValue = node.m_predictorValue;
     m_raveValue = node.m_raveValue;
     m_posCount = node.m_posCount;
     m_knowledgeCount = node.m_knowledgeCount;
     m_provenType = node.m_provenType;
     m_virtualLossCount = node.m_virtualLossCount;
     m_prior = node.m_prior;
+    m_vcGamma = node.m_vcGamma;
+    m_vcPrior = node.m_vcPrior;
 }
 
 inline const SgUctNode* SgUctNode::FirstChild() const
@@ -478,14 +490,30 @@ inline SgUctValue SgUctNode::PosCount() const
     return m_posCount;
 }
 
-inline float SgUctNode::PredictorValue() const
-{
-    return m_predictorValue;
-}
-
 inline SgUctValue SgUctNode::Prior() const
 {
     return m_prior;
+}
+
+inline float SgUctNode::VCGamma() const
+{
+    return m_vcGamma;
+}
+
+inline void SgUctNode::SetVCGamma(float gamma)
+{
+    m_vcGamma = gamma;
+}
+
+
+inline SgUctValue SgUctNode::VCPrior() const
+{
+    return m_vcPrior;
+}
+
+inline void SgUctNode::SetVCPrior(SgUctValue prior)
+{
+    m_vcPrior = prior;
 }
 
 inline SgUctValue SgUctNode::RaveCount() const

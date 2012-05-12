@@ -25,6 +25,7 @@ GoUctAdditiveKnowledgeFuego::GoUctAdditiveKnowledgeFuego(const GoBoard& bd,
 void 
 GoUctAdditiveKnowledgeFuego::ProcessPosition(std::vector<SgUctMoveInfo>& moves)
 {
+#if 0
     float sum = 0.0;
     for (size_t i = 0; i < moves.size(); ++i) 
     {
@@ -34,6 +35,7 @@ GoUctAdditiveKnowledgeFuego::ProcessPosition(std::vector<SgUctMoveInfo>& moves)
     }
     for (size_t i = 0; i < moves.size(); ++i) 
         moves[i].m_predictorValue /= sum;
+#endif
 }
 
 //----------------------------------------------------------------------------
