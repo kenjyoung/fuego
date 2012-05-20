@@ -222,21 +222,27 @@ void SgUctSearchStat::Clear()
 {
     m_time = 0;
     m_knowledge = 0;
+    m_expansions = 0;
     m_gamesPerSecond = 0;
     m_gameLength.Clear();
     m_movesInTree.Clear();
+    m_knowledgeDepth.Clear();
     m_aborted.Clear();
 }
 
 void SgUctSearchStat::Write(std::ostream& out) const
 {
     ios_all_saver saver(out);
-    out << SgWriteLabel("Time") << setprecision(2) << m_time << '\n'
+    out << SgWriteLabel("Expansions") << m_expansions << '\n'
+        << SgWriteLabel("Time") << setprecision(2) << m_time << '\n'
         << SgWriteLabel("GameLen") << fixed << setprecision(1);
     m_gameLength.Write(out);
     out << '\n'
         << SgWriteLabel("InTree");
     m_movesInTree.Write(out);
+    out << '\n'
+        << SgWriteLabel("KnowDepth");
+    m_knowledgeDepth.Write(out);
     out << '\n'
         << SgWriteLabel("Aborted")
         << static_cast<int>(100 * m_aborted.Mean()) << "%\n"
@@ -1091,6 +1097,7 @@ bool SgUctSearch::PlayInTree(SgUctThreadState& state, bool& isTerminal)
             }
             if (expandNode)
             {
+                m_statistics.m_expansions++;
                 ExpandNode(state, *current);
                 if (state.m_isTreeOutOfMem)
                     return true;
@@ -1103,6 +1110,9 @@ bool SgUctSearch::PlayInTree(SgUctThreadState& state, bool& isTerminal)
                  && NeedToComputeKnowledge(current))
         {
             m_statistics.m_knowledge++;
+            m_statistics.m_knowledgeDepth
+                .Add(static_cast<float>(sequence.size()));
+
             state.m_moves.clear();
             SgUctProvenType provenType = SG_NOT_PROVEN;
             bool truncate = state.GenerateAllMoves(current->KnowledgeCount(), 

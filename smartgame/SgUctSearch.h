@@ -429,6 +429,8 @@ struct SgUctSearchStat
     /** Number of nodes for which the knowledge threshold was exceeded. */ 
     SgUctValue m_knowledge;
 
+    SgUctValue m_expansions;
+
     /** Games per second.
         Useful values only if search time is higher than resolution of
         SgTime::Get(). */
@@ -437,6 +439,8 @@ struct SgUctSearchStat
     SgStatisticsExt<SgUctValue,SgUctValue> m_gameLength;
 
     SgStatisticsExt<SgUctValue,SgUctValue> m_movesInTree;
+
+    SgStatisticsExt<SgUctValue,SgUctValue> m_knowledgeDepth;
 
     SgUctStatistics m_aborted;
 
