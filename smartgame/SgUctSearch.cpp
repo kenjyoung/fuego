@@ -324,8 +324,6 @@ bool SgUctSearch::ExtendUnstableSearch(SgUctThreadState& state)
             = FindBestChild(m_tree.Root(), SG_UCTMOVESELECT_COUNT);
         const SgUctNode* valueChild
             = FindBestChild(m_tree.Root(), SG_UCTMOVESELECT_VALUE);
-        SgDebug() << "countChild=" << MoveString(countChild->Move()) << '\n'
-                  << "valueChild=" << MoveString(valueChild->Move()) << '\n';
         if (countChild != valueChild)
         {
             Debug(state, "SgUctSearch: extending unstable search!");
