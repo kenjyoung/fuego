@@ -625,13 +625,14 @@ SgUctValue SgUctSearch::GetBound(bool useRave, bool useBiasTerm,
         // OLD:
         // value = GetValueEstimate(false, child);
         
-        // NEW:
+        // NEW: 
         // Better first-play-urgency handling when rave is off:
-        // Exploit a child with mean > 0.5 if such a child exists;
-        // otherwise, select 'best' unexplored child. This will
-        // pick the the child with highest child.Prior() value.
+        // Exploit a child with mean > first-play-urgency if such a
+        // child exists; otherwise, select 'best' unexplored
+        // child. This will pick the the child with highest
+        // child.Prior() value.
         if (! child.HasMean())
-            value = 0.5f;
+            value = m_firstPlayUrgency;
         else
             value = GetValueEstimate(false, child);
     }
