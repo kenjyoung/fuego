@@ -50,9 +50,7 @@ struct SgUctMoveInfo
     /** Probability decided by pattern gammas. */
     float m_prior;
 
-    float m_vcGamma;
-
-    SgUctValue m_vcPrior;
+    float m_gamma;
 
     SgUctMoveInfo();
 
@@ -68,8 +66,7 @@ inline SgUctMoveInfo::SgUctMoveInfo()
       m_raveValue(0),
       m_raveCount(0),
       m_prior(0.0),
-      m_vcGamma(0.0),
-      m_vcPrior(0.0)
+      m_gamma(0.0)
 { }
 
 inline SgUctMoveInfo::SgUctMoveInfo(SgMove move)
@@ -79,8 +76,7 @@ inline SgUctMoveInfo::SgUctMoveInfo(SgMove move)
       m_raveValue(0),
       m_raveCount(0),
       m_prior(0.0),
-      m_vcGamma(0.0),
-      m_vcPrior(0.0)
+      m_gamma(0.0)
 { }
 
 inline SgUctMoveInfo::SgUctMoveInfo(SgMove move, SgUctValue value, SgUctValue count,
@@ -91,8 +87,7 @@ inline SgUctMoveInfo::SgUctMoveInfo(SgMove move, SgUctValue value, SgUctValue co
       m_raveValue(raveValue),
       m_raveCount(raveCount),
       m_prior(0.0),
-      m_vcGamma(0.0),
-      m_vcPrior(0.0)
+      m_gamma(0.0)
 { }
 
 //----------------------------------------------------------------------------
@@ -236,13 +231,11 @@ public:
     
     SgUctValue Prior() const;
 
-    float VCGamma() const;
+    void SetPrior(SgUctValue prior);
 
-    void SetVCGamma(float gamma);
+    SgUctValue Gamma() const;
 
-    SgUctValue VCPrior() const;
-
-    void SetVCPrior(SgUctValue prior);
+    void SetGamma(SgUctValue gamma);
 
     int VirtualLossCount() const;
 
@@ -291,9 +284,7 @@ private:
 
     volatile SgUctValue m_prior;
 
-    volatile float m_vcGamma;
-
-    volatile SgUctValue m_vcPrior;
+    volatile SgUctValue m_gamma;
 };
 
 inline SgUctNode::SgUctNode(const SgUctMoveInfo& info)
@@ -306,8 +297,7 @@ inline SgUctNode::SgUctNode(const SgUctMoveInfo& info)
       m_provenType(SG_NOT_PROVEN),
       m_virtualLossCount(0),
       m_prior(info.m_prior),
-      m_vcGamma(info.m_vcGamma),
-      m_vcPrior(info.m_vcPrior)
+      m_gamma(info.m_gamma)
 {
     // m_firstChild is not initialized, only defined if m_nuChildren > 0
 }
@@ -329,8 +319,7 @@ inline void SgUctNode::MergeResults(const SgUctNode& node)
     if (node.m_raveValue.IsDefined())
         m_raveValue.Add(node.m_raveValue.Mean(), node.m_raveValue.Count());
     m_prior = node.Prior();
-    m_vcGamma = node.VCGamma();
-    m_vcPrior = node.VCPrior();    
+    m_gamma = node.Gamma();
 }
 
 inline void SgUctNode::RemoveGameResult(SgUctValue eval)
@@ -368,8 +357,7 @@ inline void SgUctNode::CopyDataFrom(const SgUctNode& node)
     m_provenType = node.m_provenType;
     m_virtualLossCount = node.m_virtualLossCount;
     m_prior = node.m_prior;
-    m_vcGamma = node.m_vcGamma;
-    m_vcPrior = node.m_vcPrior;
+    m_gamma = node.m_gamma;
 }
 
 inline const SgUctNode* SgUctNode::FirstChild() const
@@ -495,25 +483,19 @@ inline SgUctValue SgUctNode::Prior() const
     return m_prior;
 }
 
-inline float SgUctNode::VCGamma() const
+inline void SgUctNode::SetPrior(SgUctValue prior)
 {
-    return m_vcGamma;
+    m_prior = prior;
 }
 
-inline void SgUctNode::SetVCGamma(float gamma)
+inline SgUctValue SgUctNode::Gamma() const
 {
-    m_vcGamma = gamma;
+    return m_gamma;
 }
 
-
-inline SgUctValue SgUctNode::VCPrior() const
+inline void SgUctNode::SetGamma(SgUctValue gamma)
 {
-    return m_vcPrior;
-}
-
-inline void SgUctNode::SetVCPrior(SgUctValue prior)
-{
-    m_vcPrior = prior;
+    m_gamma = gamma;
 }
 
 inline SgUctValue SgUctNode::RaveCount() const

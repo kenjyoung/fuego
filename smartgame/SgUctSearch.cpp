@@ -641,7 +641,6 @@ SgUctValue SgUctSearch::GetBound(bool useRave, bool useBiasTerm,
         sqrt(child.MoveCount() + child.VirtualLossCount() + 1.0f);
 
     value += m_progressiveBiasConstant * child.Prior() / sqrtMoveCount;
-    value += m_vcProgressiveBiasConstant * child.VCPrior() / sqrtMoveCount;
 
     if (m_biasTermConstant == 0.0 || ! useBiasTerm)
         return value;
