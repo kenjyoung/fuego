@@ -688,10 +688,6 @@ public:
     /** See ProgressiveBiasConstant() */
     void SetProgressiveBiasConstant(SgUctValue value);
 
-    SgUctValue VCProgressiveBiasConstant() const;
-
-    void SetVCProgressiveBiasConstant(SgUctValue value);
-
     /** Extends search in unstable positions.
         An unstable position is one in which the move with the highest
         count is not the same as the move with the best value, as
@@ -1107,8 +1103,6 @@ private:
     /** See ProgressiveBiasConstant() */
     SgUctValue m_progressiveBiasConstant;
 
-    SgUctValue m_vcProgressiveBiasConstant;
-
     bool m_extendUnstableSearch;
 
     bool m_extendedSearch;
@@ -1239,17 +1233,6 @@ inline SgUctValue SgUctSearch::ProgressiveBiasConstant() const
 inline void SgUctSearch::SetProgressiveBiasConstant(SgUctValue value)
 {
     m_progressiveBiasConstant = value;
-}
-
-
-inline SgUctValue SgUctSearch::VCProgressiveBiasConstant() const
-{
-    return m_vcProgressiveBiasConstant;
-}
-
-inline void SgUctSearch::SetVCProgressiveBiasConstant(SgUctValue value)
-{
-    m_vcProgressiveBiasConstant = value;
 }
 
 inline bool SgUctSearch::ExtendUnstableSearch() const
