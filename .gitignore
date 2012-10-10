@@ -30,4 +30,6 @@ simpleplayers/Makefile
 smartgame/Makefile
 stamp-h1
 unittestmain/Makefile
+.cproject
+.project
 
