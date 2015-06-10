@@ -6,6 +6,7 @@
 #ifndef SG_TIMER_H
 #define SG_TIMER_H
 
+#include "SgSystem.h"
 #include "SgTime.h"
 
 //----------------------------------------------------------------------------
